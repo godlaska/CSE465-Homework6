@@ -1,0 +1,27 @@
+STR = "A" ;
+STR1 = "He   lLo" ;
+STR_2 = "   WOrLD   !   a" ;
+B_3 = "-100" ;
+T1ME_3 = "??" ;
+
+PRINT STR ;
+PRINT STR1 ;
+PRINT STR_2 ;
+PRINT B_3 ;
+PRINT T1ME_3 ;
+
+TEMP = STR ;
+STR = T1ME_3 ;
+T1ME_3 = TEMP ;
+
+TEMP = STR1 ;
+STR1 = B_3 ;
+B_3 = TEMP ;
+
+STR_2 = STR_2 ;
+
+PRINT STR ;
+PRINT STR1 ;
+PRINT STR_2 ;
+PRINT B_3 ;
+PRINT T1ME_3 ;

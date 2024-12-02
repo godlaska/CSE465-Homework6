@@ -1,0 +1,14 @@
+A = 0 ;
+A += 2 ;
+
+NUM += A ;
+
+NAME = "Unknown" ;
+
+PRINT NUM ;
+PRINT NAME ;
+
+NAME += A ;
+
+PRINT NUM ;
+PRINT NAME ;

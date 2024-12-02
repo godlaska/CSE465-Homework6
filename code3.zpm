@@ -1,0 +1,21 @@
+NUM1 = 10 ;
+NUM2 = 20 ;
+NUM1 += 10 ;
+NUM2 += -10 ;
+B_3 = -100 ;
+B_3 *= 2 ;
+B_3 \= NUM1 ;
+B_3 \= -1 ;
+TAX = -2 ;
+NUM2 += NUM1 ;
+NO4_2 = -34 ;
+NO4_2 *= -1 ;
+NO4_2 -= NUM2 ;
+NO4_2 -= 1 ;
+TAX *= TAX ;
+ 
+PRINT NUM1 ;
+PRINT NUM2 ;
+PRINT B_3 ;
+PRINT NO4_2 ;
+PRINT TAX ;

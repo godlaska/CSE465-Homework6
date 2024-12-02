@@ -1,0 +1,10 @@
+NUM = 1 ;
+FOR 2 PRINT NUM ; NUM += 1 ; ENDFOR
+PRINT NUM ;
+
+A = 1 ;
+FOR 9999 A += 1 ; A -= 1 ; A *= 2 ; A \= 2 ; ENDFOR
+PRINT A ;
+
+STR = "A" ;
+FOR 5 STR += " " ; STR += "a" ; PRINT STR ; ENDFOR

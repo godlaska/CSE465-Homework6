@@ -1,0 +1,27 @@
+NUM1 = 10 ;
+NUM2 = 20 ;
+B_3 = -100 ;
+TAX = -2 ;
+NO4_2 = -34 ;
+
+PRINT NUM1 ;
+PRINT NUM2 ;
+PRINT B_3 ;
+PRINT TAX ;
+PRINT NO4_2 ;
+
+TEMP = NUM1 ;
+NUM1 = NO4_2 ;
+NO4_2 = TEMP ;
+
+TEMP = NUM2 ;
+NUM2 = B_3 ;
+B_3 = TEMP ;
+
+TAX = TAX ;
+
+PRINT NUM1 ;
+PRINT NUM2 ;
+PRINT B_3 ;
+PRINT TAX ;
+PRINT NO4_2 ;

@@ -1,0 +1,14 @@
+CH1 = "CSE " ;
+MSG1 = "Hello" ;
+MSG2 = " World" ;
+CH2 = "465-565 " ;
+MSG3 = "!" ;
+
+CH1 += CH2 ;
+CH1 += MSG3 ;
+
+MSG1 += MSG2 ;
+MSG1 += MSG3 ;
+
+PRINT CH1 ;
+PRINT MSG1 ;
