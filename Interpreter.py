@@ -17,6 +17,7 @@ class Interpreter:
 
     # Class attribute for token specifications accessible to all instances
     TOKEN_SPECIFICATION = (
+        ('PRINT',       r'PRINT'),                                      # Print statement 
         ('INT_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # Integer variable (lookahead for assignment and operations)
         ('STR_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # String variable (lookahead for assignment and addition)
         ('ASSIGN',      r'(?<=\s)\=(?=\s)'),                            # Assignment operator
@@ -71,7 +72,13 @@ class Interpreter:
         it = iter(tokens)
 
         for token in it:
-            if token[0] in ['INT_VAR', 'STR_VAR']:
+
+            print(token)
+
+            if token[0] == 'PRINT':  # Handle PRINT keyword
+                print("PRINTED!!!!")
+
+            elif token[0] in ['INT_VAR', 'STR_VAR']:
                 var_name = token[1]
                 next(it)  # skip the next token. We will deal with the Str or Int value later
                 op_token = next(it)[1]  # Get the operator
@@ -84,7 +91,7 @@ class Interpreter:
                     value = value_token[1][1:-1]  # getting rid of ""
                 else: 
                     '''
-                    if it's not a numebr or string, then it's a variable, 
+                    if it's not a number or string, then it's a variable, 
                     then it's one of INT_VAR_VAL or STR_VAR_VAL or ASS_VAL
                     so let's get the value of that variable. 
                     '''
@@ -102,6 +109,8 @@ class Interpreter:
                         self.variables[var_name] -= value
                     elif op_token == '*=':
                         self.variables[var_name] *= value
+                    elif op_token == '/=':
+                        self.variables[var_name] /= value
                 except Exception as e:
                     print(f"Error in line: {self.line_number}")
                     sys.exit()
@@ -127,7 +136,7 @@ if __name__ == "__main__":
     
     #filename = sys.argv[1]  # for getting the filename from command line
     #OR
-    filename = "test1.zpm"
+    filename = "code1.zpm"
 
     interpreter = Interpreter(filename);
     interpreter.run()
