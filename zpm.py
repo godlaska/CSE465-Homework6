@@ -24,7 +24,7 @@ class Interpreter:
         ('PLUS_ASSIGN', r'(?<=\s)\+=(?=\s)'),                           # Addition assignment operator
         ('MINUS_ASSIGN',r'(?<=\s)-=(?=\s)'),                            # Subtraction assignment operator
         ('MULT_ASSIGN', r'(?<=\s)\*=(?=\s)'),                           # Multiplication assignment operator
-        ('DIV_ASSIGN', r'(?<=\s)/=(?=\s)'),                           # Division assignment operator
+        ('DIV_ASSIGN', r'(?<=\s)\\=(?=\s)'),                           # Division assignment operator
         ('INT_VAR_VAL', r'(?<=[\+\-\*]=)\s[a-zA-Z_][a-zA-Z_0-9]*'),     # Integer variable (lookahead for operations)
         ('STR_VAR_VAL', r'(?<=\+=)\s[a-zA-Z_][a-zA-Z_0-9]*'),           # String variable (lookahead for addition)
         ('ASS_VAL', r'(?<=\=)\s[a-zA-Z_][a-zA-Z_0-9]*'),                # variable (lookahead for assignment)
@@ -72,58 +72,91 @@ class Interpreter:
         '''
         it = iter(tokens)
 
-        for token in it:
-            if token[0] == 'PRINT_VAR':
-                try:
-                    next(it)
-                    next(it)
-                    var_name = token[1][6:]
+        try:
+            for token in it:
+                if token[0] == 'PRINT_VAR':
+                    try:
+                        next(it)
+                        next(it)
+                        var_name = token[1][6:]
 
-                    if var_name in self.variables:
-                        print(f"{var_name} = {self.variables[var_name]}")
-                    else:
-                        print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
+                        if var_name in self.variables:
+                            value = self.variables[var_name]
+                            if isinstance(value, str):  # Check if the value is a string
+                                print(f'{var_name} = "{value}"')  # Wrap the string in quotes
+                            else:
+                                print(f"{var_name} = {value}")  # Print other types normally
+                        else:
+                            print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
+                            sys.exit()
+                    except StopIteration:
+                        print(f"RUNTIME ERROR: {self.line_number}")
+                        sys.exit();
+
+                elif token[0] in ['INT_VAR', 'STR_VAR'] and not (token[0] == 'PRINT'):
+                    var_name = token[1]
+                    next(it)  # skip the next token. We will deal with the Str or Int value later
+                    op_token = next(it)[1]  # Get the operator
+                    value_token = next(it)  # Get the value token
+                    semicolon = next(it)[1]  # Ensure semicolon
+
+                    if value_token[0] == 'NUMBER':
+                        value = int(value_token[1])
+                    elif value_token[0] == 'STRING':
+                        value = value_token[1][1:-1]  # getting rid of ""
+                    else: 
+                        '''
+                        if it's not a number or string, then it's a variable, 
+                        then it's one of INT_VAR_VAL or STR_VAR_VAL or ASS_VAL
+                        so let's get the value of that variable. 
+                        '''
+                        value = self.variables[value_token[1]]
+                        if value is None:
+                            print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
+                            sys.exit()
+
+                    try: # for capturing the error where we add an int value to a string variable or vice versa
+                        if op_token == '=':
+                            self.variables[var_name] = value
+                        elif op_token == '+=':
+                            if var_name not in self.variables:
+                                # Initialize to 0 for numeric variables and empty string for string variables
+                                if isinstance(value, str):  # Check if the value is a string
+                                    self.variables[var_name] = ""
+                                else:
+                                    self.variables[var_name] = 0
+                            self.variables[var_name] += value
+                        elif op_token == '-=':
+                            # Default to 0 if the variable is not defined
+                            if var_name not in self.variables:
+                                self.variables[var_name] = 0
+                            self.variables[var_name] -= value
+                        elif op_token == '*=':
+                            # Default to 0 if the variable is not defined
+                            if var_name not in self.variables:
+                                self.variables[var_name] = 0
+                            self.variables[var_name] *= value
+                        elif op_token == '\\=':
+                            # Default to 0 if the variable is not defined
+                            if var_name not in self.variables:
+                                self.variables[var_name] = 0
+                                
+                            # checks if the division is with integers or floats only
+                            if isinstance(self.variables[var_name], (int, float)) and isinstance(value, (int, float)):
+                                if value != 0:
+                                    self.variables[var_name] //= value  # integer division
+                                else:
+                                    print(f"Error: Division by zero on line {self.line_number}")
+                                    sys.exit()
+                            else:
+                                print(f"RUNTIME ERROR: {self.line_number}")
+                                sys.exit()
+                    except Exception as e:
+                        print(f"RUNTIME ERROR: {self.line_number}")
                         sys.exit()
-                except StopIteration:
-                    print(f"Error in line: {self.line_number}")
-                    sys.exit();
-
-            elif token[0] in ['INT_VAR', 'STR_VAR'] and not (token[0] == 'PRINT'):
-                var_name = token[1]
-                next(it)  # skip the next token. We will deal with the Str or Int value later
-                op_token = next(it)[1]  # Get the operator
-                value_token = next(it)  # Get the value token
-                semicolon = next(it)[1]  # Ensure semicolon
-
-                if value_token[0] == 'NUMBER':
-                    value = int(value_token[1])
-                elif value_token[0] == 'STRING':
-                    value = value_token[1][1:-1]  # getting rid of ""
-                else: 
-                    '''
-                    if it's not a number or string, then it's a variable, 
-                    then it's one of INT_VAR_VAL or STR_VAR_VAL or ASS_VAL
-                    so let's get the value of that variable. 
-                    '''
-                    value = self.variables[value_token[1]]
-                    if value is None:
-                        print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
-                        sys.exit()
-
-                try: # for capturing the error where we add an int value to a string variable or vice versa
-                    if op_token == '=':
-                        self.variables[var_name] = value
-                    elif op_token == '+=':
-                        self.variables[var_name] += value
-                    elif op_token == '-=':
-                        self.variables[var_name] -= value
-                    elif op_token == '*=':
-                        self.variables[var_name] *= value
-                    elif op_token == '/=':
-                        self.variables[var_name] /= value
-                except Exception as e:
-                    print(f"Error in line: {self.line_number}")
-                    sys.exit()
+        except Exception as e:
+            print(f"RUNTIME ERROR: {self.line_number}")  # catches errors when parsing tokens
+            sys.exit()
 
     def run(self, file_name = ""):
         """
@@ -146,10 +179,8 @@ if __name__ == "__main__":
     
     #filename = sys.argv[1]  # for getting the filename from command line
     #OR
-    filename = "code2.zpm"
+    filename = "test.zpm"
 
     interpreter = Interpreter(filename);
     interpreter.run()
-    # if there is no error in the .zpm file, the next line will get printed at the end
-    print(interpreter.variables)
 
