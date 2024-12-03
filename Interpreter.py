@@ -46,37 +46,18 @@ class Interpreter:
         2- Maximal Munch (or Longest Match) Principle
         """
         tokens = []
-        position = 0  # current line position
-        line = line.strip()
 
-        while position < len(line):
-            # Check if the line starts with 'PRINT'
-            if line[position].startswith('PRINT'):
-                tokens.append(('PRINT', 'PRINT'))
-                position += len('PRINT')
-                continue
+        # looping through all patterns
+        for tok_type, tok_regex in self.TOKEN_SPECIFICATION:
+            # compiling a string pattern into its actual pattern matching
+            regex = re.compile(tok_regex)
+            # looking for a match
+            match = regex.search(line)
 
-            # None documentation found at https://www.w3schools.com/python/ref_keyword_none.asp
-            match = None
+            if match and tok_type != 'WS' and tok_type != 'NEWLN':  # Skip whitespace and newLine
+                    token = (tok_type, match.group(0).strip())  # getting the match from the line
+                    tokens.append(token)
 
-            # looping through all patterns
-            for tok_type, tok_regex in self.TOKEN_SPECIFICATION:
-                # compiling a string pattern into its actual pattern matching
-                regex = re.compile(tok_regex)
-                # looking for a match
-                match = regex.match(line, position)  # match at the current position
-
-                if match:
-                    if tok_type != 'WS' and tok_type != 'NEWLN':  # Skip whitespace and newLine
-                        token = (tok_type, match.group(0).strip())  # getting the match from the line
-                        tokens.append(token)
-                    position = match.end()  # move to the end of the matched token
-                    break
-
-                if not match:
-                    print(f"Unexpected token at position {position}: '{line[position]}'")
-                    sys.exit()
-                    
         return tokens
 
 
@@ -91,8 +72,17 @@ class Interpreter:
 
         for token in it:
 
+            print(token)
+
             if token[0] in ['INT_VAR', 'STR_VAR']:
                 var_name = token[1]
+
+                 # Check for the special case where the variable name is 'PRINT'
+                if var_name == 'PRINT':
+                    # Handle the special case for 'PRINT' as a variable name
+                    print(f"PRINT found on {self.line_number}")
+                    sys.exit()
+
                 next(it)  # skip the next token. We will deal with the Str or Int value later
                 op_token = next(it)[1]  # Get the operator
                 value_token = next(it)  # Get the value token
