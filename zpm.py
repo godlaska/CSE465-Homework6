@@ -17,12 +17,14 @@ class Interpreter:
 
     # Class attribute for token specifications accessible to all instances
     TOKEN_SPECIFICATION = (
+        ('PRINT_VAR',   r'\bPRINT\s+[a-zA-Z_][a-zA-Z_0-9]*\b'),         # Print statement
         ('INT_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # Integer variable (lookahead for assignment and operations)
         ('STR_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # String variable (lookahead for assignment and addition)
         ('ASSIGN',      r'(?<=\s)\=(?=\s)'),                            # Assignment operator
         ('PLUS_ASSIGN', r'(?<=\s)\+=(?=\s)'),                           # Addition assignment operator
         ('MINUS_ASSIGN',r'(?<=\s)-=(?=\s)'),                            # Subtraction assignment operator
         ('MULT_ASSIGN', r'(?<=\s)\*=(?=\s)'),                           # Multiplication assignment operator
+        ('DIV_ASSIGN', r'(?<=\s)/=(?=\s)'),                           # Division assignment operator
         ('INT_VAR_VAL', r'(?<=[\+\-\*]=)\s[a-zA-Z_][a-zA-Z_0-9]*'),     # Integer variable (lookahead for operations)
         ('STR_VAR_VAL', r'(?<=\+=)\s[a-zA-Z_][a-zA-Z_0-9]*'),           # String variable (lookahead for addition)
         ('ASS_VAL', r'(?<=\=)\s[a-zA-Z_][a-zA-Z_0-9]*'),                # variable (lookahead for assignment)
@@ -71,18 +73,23 @@ class Interpreter:
         it = iter(tokens)
 
         for token in it:
+            if token[0] == 'PRINT_VAR':
+                try:
+                    next(it)
+                    next(it)
+                    var_name = token[1][6:]
 
-            print(token)
+                    if var_name in self.variables:
+                        print(f"{var_name} = {self.variables[var_name]}")
+                    else:
+                        print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
+                        sys.exit()
+                except StopIteration:
+                    print(f"Error in line: {self.line_number}")
+                    sys.exit();
 
-            if token[0] in ['INT_VAR', 'STR_VAR']:
+            elif token[0] in ['INT_VAR', 'STR_VAR'] and not (token[0] == 'PRINT'):
                 var_name = token[1]
-
-                 # Check for the special case where the variable name is 'PRINT'
-                if var_name == 'PRINT':
-                    # Handle the special case for 'PRINT' as a variable name
-                    print(f"PRINT found on {self.line_number}")
-                    sys.exit()
-
                 next(it)  # skip the next token. We will deal with the Str or Int value later
                 op_token = next(it)[1]  # Get the operator
                 value_token = next(it)  # Get the value token
@@ -139,7 +146,7 @@ if __name__ == "__main__":
     
     #filename = sys.argv[1]  # for getting the filename from command line
     #OR
-    filename = "code1.zpm"
+    filename = "code2.zpm"
 
     interpreter = Interpreter(filename);
     interpreter.run()
