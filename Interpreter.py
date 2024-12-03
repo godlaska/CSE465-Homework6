@@ -17,7 +17,6 @@ class Interpreter:
 
     # Class attribute for token specifications accessible to all instances
     TOKEN_SPECIFICATION = (
-        ('PRINT',       r'PRINT'),                                      # Print statement 
         ('INT_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # Integer variable (lookahead for assignment and operations)
         ('STR_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # String variable (lookahead for assignment and addition)
         ('ASSIGN',      r'(?<=\s)\=(?=\s)'),                            # Assignment operator
@@ -47,24 +46,43 @@ class Interpreter:
         2- Maximal Munch (or Longest Match) Principle
         """
         tokens = []
+        position = 0  # current line position
+        line = line.strip()
 
-        # looping through all patterns
-        for tok_type, tok_regex in self.TOKEN_SPECIFICATION:
-            # compiling a string pattern into its actual pattern matching
-            regex = re.compile(tok_regex)
-            # looking for a match
-            match = regex.search(line)
+        while position < len(line):
+            # Check if the line starts with 'PRINT'
+            if line[position].startswith('PRINT'):
+                tokens.append(('PRINT', 'PRINT'))
+                position += len('PRINT')
+                continue
 
-            if match and tok_type != 'WS' and tok_type != 'NEWLN':  # Skip whitespace and newLine
-                    token = (tok_type, match.group(0).strip())  # getting the match from the line
-                    tokens.append(token)
+            # None documentation found at https://www.w3schools.com/python/ref_keyword_none.asp
+            match = None
+
+            # looping through all patterns
+            for tok_type, tok_regex in self.TOKEN_SPECIFICATION:
+                # compiling a string pattern into its actual pattern matching
+                regex = re.compile(tok_regex)
+                # looking for a match
+                match = regex.match(line, position)  # match at the current position
+
+                if match:
+                    if tok_type != 'WS' and tok_type != 'NEWLN':  # Skip whitespace and newLine
+                        token = (tok_type, match.group(0).strip())  # getting the match from the line
+                        tokens.append(token)
+                    position = match.end()  # move to the end of the matched token
+                    break
+
+                if not match:
+                    print(f"Unexpected token at position {position}: '{line[position]}'")
+                    sys.exit()
                     
         return tokens
 
 
     def parse(self, tokens):
         '''
-        Usually in parsisng phase, the tokens are checked and then a data structure (usually a tree)
+        Usually in parsing phase, the tokens are checked and then a data structure (usually a tree)
         will be constructed from tokens that will be send to another method, and that method actually
         translate and runs the tokens. HERE, we are combining the parsing with also executing the tokens. 
         Just to keep things simpler.
@@ -73,12 +91,7 @@ class Interpreter:
 
         for token in it:
 
-            print(token)
-
-            if token[0] == 'PRINT':  # Handle PRINT keyword
-                print("PRINTED!!!!")
-
-            elif token[0] in ['INT_VAR', 'STR_VAR']:
+            if token[0] in ['INT_VAR', 'STR_VAR']:
                 var_name = token[1]
                 next(it)  # skip the next token. We will deal with the Str or Int value later
                 op_token = next(it)[1]  # Get the operator
