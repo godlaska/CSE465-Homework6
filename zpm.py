@@ -167,19 +167,27 @@ class Interpreter:
 
         self.line_number = 0
 
-        with open(file_name, 'r') as file:
-            for line in file:
-                self.line_number += 1
+        try:
+            with open(file_name, 'r') as file:
+                for line in file:
+                    self.line_number += 1
 
-                tokens = self.lexical_analysis(line)
-                self.parse(tokens)
+                    tokens = self.lexical_analysis(line)
+                    self.parse(tokens)
+        except FileNotFoundError:
+            print(f"Error: The file '{file_name}' was not found.")
+            sys.exit(1)  # Exit with an error code
+        except IOError as e:
+            print(f"Error: An I/O error occurred while accessing the file '{file_name}': {e}")
+            sys.exit(1)  # Exit with an error code
 
 if __name__ == "__main__":
-     # The second argument in sys.argv is expected to be the filename
-    
-    #filename = sys.argv[1]  # for getting the filename from command line
-    #OR
-    filename = "test.zpm"
+    # Check if the filename is provided as a second argument
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]  # Get the filename from the command line
+    else:
+        print("Usage: python3 zpm.py <filename>")
+        sys.exit(1)  # Exit the program if no file is provided
 
     interpreter = Interpreter(filename);
     interpreter.run()
