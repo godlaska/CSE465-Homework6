@@ -1,16 +1,8 @@
+# Copyright (c) 2024 Keigen Godlaski
+# Parts of the code are written with the assistance of ChatGPT and Claude.ai
+
 import re   # for using regular expression
 import sys  # for terminating the program when error happens
-
-''' 1- Lexical analysis: is the first phase of a compiler. 
-    Its main job is to read the input source code and convert it into meaningful
-    units called tokens. This is done by a component of the compiler or interpreter
-    known as the lexer or lexical analyzer.The result will be a stream of tokens 
-    for each line of the code. 
-    2- Parsing: Once the lexical analysis is complete, the next stage is parsing. 
-    The parser takes the stream of tokens produced by the lexer and builds a data
-    structure known as a parse tree or syntax tree. This tree represents the 
-    grammatical structure of the program.
-'''
 
 class Interpreter:
 
@@ -43,9 +35,6 @@ class Interpreter:
     def lexical_analysis(self, line):
         """
         This function uses regular expression for tokenizing. 
-        There are other tools and algorithms for tokenizing such as:
-        1- tool: FLexer Generators (e.g., Lex, Flex)
-        2- Maximal Munch (or Longest Match) Principle
         """
         tokens = []
 
@@ -61,15 +50,6 @@ class Interpreter:
                     tokens.append(token)
 
         return tokens
-    
-    def split_statements(self, code):
-        '''
-        This function splits the loop body (or any code block) into individual statements.
-        It assumes that statements are separated by semicolons and each statement is on a new line.
-        '''
-        # Split the code by semicolon, remove empty statements, and strip any extra spaces
-        statements = [stmt.strip() for stmt in code.split(';') if stmt.strip()]
-        return statements
 
     def parse(self, tokens):
         '''
