@@ -18,13 +18,14 @@ class Interpreter:
     # Class attribute for token specifications accessible to all instances
     TOKEN_SPECIFICATION = (
         ('PRINT_VAR',   r'\bPRINT\s+[a-zA-Z_][a-zA-Z_0-9]*\b'),         # Print statement
+        ('FOR_LOOP',    r'\bFOR\s+\d+\s+(?:[a-zA-Z_][a-zA-Z_0-9]*\s*(?:\+|-|\*|\\)?=\s*["\']?.+?["\']?\s*;\s*)*ENDFOR\b'),  # For-loop statement
         ('INT_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # Integer variable (lookahead for assignment and operations)
         ('STR_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # String variable (lookahead for assignment and addition)
         ('ASSIGN',      r'(?<=\s)\=(?=\s)'),                            # Assignment operator
         ('PLUS_ASSIGN', r'(?<=\s)\+=(?=\s)'),                           # Addition assignment operator
         ('MINUS_ASSIGN',r'(?<=\s)-=(?=\s)'),                            # Subtraction assignment operator
         ('MULT_ASSIGN', r'(?<=\s)\*=(?=\s)'),                           # Multiplication assignment operator
-        ('DIV_ASSIGN', r'(?<=\s)\\=(?=\s)'),                           # Division assignment operator
+        ('DIV_ASSIGN',  r'(?<=\s)\\=(?=\s)'),                           # Division assignment operator
         ('INT_VAR_VAL', r'(?<=[\+\-\*]=)\s[a-zA-Z_][a-zA-Z_0-9]*'),     # Integer variable (lookahead for operations)
         ('STR_VAR_VAL', r'(?<=\+=)\s[a-zA-Z_][a-zA-Z_0-9]*'),           # String variable (lookahead for addition)
         ('ASS_VAL', r'(?<=\=)\s[a-zA-Z_][a-zA-Z_0-9]*'),                # variable (lookahead for assignment)
@@ -71,9 +72,27 @@ class Interpreter:
         Just to keep things simpler.
         '''
         it = iter(tokens)
+        in_for_loop = False  # Track if we're inside a FOR loop
 
         try:
             for token in it:
+
+                # Handle FOR_LOOP token
+                if token[0] == 'FOR_LOOP':
+                    if in_for_loop:
+                        print(f"ERROR: Nested FOR loops are not supported on line {self.line_number}")
+                        sys.exit()
+                    in_for_loop = True
+                    print(f"Valid FOR_LOOP: {token[1]}")
+                    continue
+
+                # Check for ENDFOR presence
+                if in_for_loop and token[1] == "ENDFOR":
+                    in_for_loop = False  # Close the FOR loop
+                    print("ENDFOR found, loop closed successfully.")
+                    continue
+
+                # PRINT STATEMENTS LOGIC
                 if token[0] == 'PRINT_VAR':
                     try:
                         next(it)
@@ -87,11 +106,11 @@ class Interpreter:
                             else:
                                 print(f"{var_name} = {value}")  # Print other types normally
                         else:
-                            print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
+                            print(f"Undefined variable '{var_name}' on line {self.line_number}")
                             sys.exit()
                     except StopIteration:
                         print(f"RUNTIME ERROR: {self.line_number}")
-                        sys.exit();
+                        sys.exit()          
 
                 elif token[0] in ['INT_VAR', 'STR_VAR'] and not (token[0] == 'PRINT'):
                     var_name = token[1]
@@ -154,6 +173,18 @@ class Interpreter:
                     except Exception as e:
                         print(f"RUNTIME ERROR: {self.line_number}")
                         sys.exit()
+
+                # Error if FOR loop not closed
+                if in_for_loop and token[0] != 'FOR_LOOP':
+                    print(f"ERROR: Missing ENDFOR for FOR loop on line {self.line_number}")
+                    sys.exit()
+
+            # Final check for unclosed FOR loops
+            if in_for_loop:
+                print(f"ERROR: Missing ENDFOR at end of file for FOR loop on line {self.line_number}")
+                sys.exit()
+
+
         except Exception as e:
             print(f"RUNTIME ERROR: {self.line_number}")  # catches errors when parsing tokens
             sys.exit()
