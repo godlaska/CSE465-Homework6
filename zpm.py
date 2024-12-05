@@ -91,21 +91,21 @@ class Interpreter:
                     loop_body = parts[2].rsplit(None, 1)[0]  # Extract body before ENDFOR
                     
                     # Tokenize loop body
-                    body_statements = loop_body.split(';')  # Split the body by semicolons to get individual statements
+                    body_statements = re.findall(r'.*?;', loop_body)  # Match up to and including the semicolon
                     body_statements = [stmt.strip() for stmt in body_statements if stmt.strip()]  # Clean and remove empty statements
 
-                    print(f"Statements: {body_statements}")
-
                     # Run the loop for the specified number of iterations
-                    for i in range(loop_count):
-                        print(f"Starting iteration {i+1} of loop...")  # Debug output for loop iteration
+                    for _ in range(loop_count):
                         for statement in body_statements:
+
                             # Tokenize each statement
                             statement_tokens = self.lexical_analysis(statement)  # Tokenize each statement individually
-                            print(f"Tokenized statement: {statement_tokens}")  # Debug output to show tokenized statement
                             self.parse(statement_tokens)  # Call parse on the tokenized statement
+                    
+                    # Skip remaining tokens after ENDFOR to prevent re-processing
+                    return
 
-                elif token[0] == 'PRINT_VAR':
+                if token[0] == 'PRINT_VAR':
                     try:
                         next(it)
                         next(it)
@@ -198,11 +198,6 @@ class Interpreter:
 
         self.line_number = 0
 
-        with open(file_name, 'r') as file:
-            for line in file:
-                self.line_number += 1
-                tokens = self.lexical_analysis(line)
-                self.parse(tokens)
         try:
             with open(file_name, 'r') as file:
                 for line in file:
@@ -221,7 +216,7 @@ if __name__ == "__main__":
     
     #filename = sys.argv[1]  # for getting the filename from command line
     #OR
-    filename = "test.zpm"
+    filename = ""
     # Check if the filename is provided as a second argument
     if len(sys.argv) > 1:
         filename = sys.argv[1]  # Get the filename from the command line
