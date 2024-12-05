@@ -6,7 +6,6 @@ import sys  # for terminating the program when error happens
     units called tokens. This is done by a component of the compiler or interpreter
     known as the lexer or lexical analyzer.The result will be a stream of tokens 
     for each line of the code. 
-
     2- Parsing: Once the lexical analysis is complete, the next stage is parsing. 
     The parser takes the stream of tokens produced by the lexer and builds a data
     structure known as a parse tree or syntax tree. This tree represents the 
@@ -17,15 +16,15 @@ class Interpreter:
 
     # Class attribute for token specifications accessible to all instances
     TOKEN_SPECIFICATION = (
+        ('FOR_LOOP', r'\bFOR\b\s+\d+\s+((?:[a-zA-Z_][a-zA-Z_0-9]*\s*[\+\-\*\\]?=\s*(?:\d+|\"[^\"]*\")|PRINT\s+[a-zA-Z_][a-zA-Z_0-9]*|[a-zA-Z_][a-zA-Z_0-9]*\s*[;]?)\s*;?\s*)*\bENDFOR\b'),  # FOR loop
         ('PRINT_VAR',   r'\bPRINT\s+[a-zA-Z_][a-zA-Z_0-9]*\b'),         # Print statement
-        ('FOR_LOOP',    r'\bFOR\s+\d+\s+(?:[a-zA-Z_][a-zA-Z_0-9]*\s*(?:\+|-|\*|\\)?=\s*["\']?.+?["\']?\s*;\s*)*ENDFOR\b'),  # For-loop statement
         ('INT_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # Integer variable (lookahead for assignment and operations)
         ('STR_VAR',     r'[a-zA-Z_][a-zA-Z_0-9]*\s'),                   # String variable (lookahead for assignment and addition)
         ('ASSIGN',      r'(?<=\s)\=(?=\s)'),                            # Assignment operator
         ('PLUS_ASSIGN', r'(?<=\s)\+=(?=\s)'),                           # Addition assignment operator
         ('MINUS_ASSIGN',r'(?<=\s)-=(?=\s)'),                            # Subtraction assignment operator
         ('MULT_ASSIGN', r'(?<=\s)\*=(?=\s)'),                           # Multiplication assignment operator
-        ('DIV_ASSIGN',  r'(?<=\s)\\=(?=\s)'),                           # Division assignment operator
+        ('DIV_ASSIGN', r'(?<=\s)\\=(?=\s)'),                           # Division assignment operator
         ('INT_VAR_VAL', r'(?<=[\+\-\*]=)\s[a-zA-Z_][a-zA-Z_0-9]*'),     # Integer variable (lookahead for operations)
         ('STR_VAR_VAL', r'(?<=\+=)\s[a-zA-Z_][a-zA-Z_0-9]*'),           # String variable (lookahead for addition)
         ('ASS_VAL', r'(?<=\=)\s[a-zA-Z_][a-zA-Z_0-9]*'),                # variable (lookahead for assignment)
@@ -62,7 +61,15 @@ class Interpreter:
                     tokens.append(token)
 
         return tokens
-
+    
+    def split_statements(self, code):
+        '''
+        This function splits the loop body (or any code block) into individual statements.
+        It assumes that statements are separated by semicolons and each statement is on a new line.
+        '''
+        # Split the code by semicolon, remove empty statements, and strip any extra spaces
+        statements = [stmt.strip() for stmt in code.split(';') if stmt.strip()]
+        return statements
 
     def parse(self, tokens):
         '''
@@ -72,28 +79,33 @@ class Interpreter:
         Just to keep things simpler.
         '''
         it = iter(tokens)
-        in_for_loop = False  # Track if we're inside a FOR loop
 
         try:
             for token in it:
 
-                # Handle FOR_LOOP token
                 if token[0] == 'FOR_LOOP':
-                    if in_for_loop:
-                        print(f"ERROR: Nested FOR loops are not supported on line {self.line_number}")
-                        sys.exit()
-                    in_for_loop = True
-                    print(f"Valid FOR_LOOP: {token[1]}")
-                    continue
+                    # Extract FOR_LOOP body and count
+                    loop_code = token[1]
+                    parts = loop_code.split(None, 2)  # Split into ["FOR", count, "body"]
+                    loop_count = int(parts[1])  # Extract loop count
+                    loop_body = parts[2].rsplit(None, 1)[0]  # Extract body before ENDFOR
+                    
+                    # Tokenize loop body
+                    body_statements = loop_body.split(';')  # Split the body by semicolons to get individual statements
+                    body_statements = [stmt.strip() for stmt in body_statements if stmt.strip()]  # Clean and remove empty statements
 
-                # Check for ENDFOR presence
-                if in_for_loop and token[1] == "ENDFOR":
-                    in_for_loop = False  # Close the FOR loop
-                    print("ENDFOR found, loop closed successfully.")
-                    continue
+                    print(f"Statements: {body_statements}")
 
-                # PRINT STATEMENTS LOGIC
-                if token[0] == 'PRINT_VAR':
+                    # Run the loop for the specified number of iterations
+                    for i in range(loop_count):
+                        print(f"Starting iteration {i+1} of loop...")  # Debug output for loop iteration
+                        for statement in body_statements:
+                            # Tokenize each statement
+                            statement_tokens = self.lexical_analysis(statement)  # Tokenize each statement individually
+                            print(f"Tokenized statement: {statement_tokens}")  # Debug output to show tokenized statement
+                            self.parse(statement_tokens)  # Call parse on the tokenized statement
+
+                elif token[0] == 'PRINT_VAR':
                     try:
                         next(it)
                         next(it)
@@ -106,11 +118,11 @@ class Interpreter:
                             else:
                                 print(f"{var_name} = {value}")  # Print other types normally
                         else:
-                            print(f"Undefined variable '{var_name}' on line {self.line_number}")
+                            print(f"Undefined variable '{value_token[1]}' on line {self.line_number}")
                             sys.exit()
                     except StopIteration:
                         print(f"RUNTIME ERROR: {self.line_number}")
-                        sys.exit()          
+                        sys.exit();
 
                 elif token[0] in ['INT_VAR', 'STR_VAR'] and not (token[0] == 'PRINT'):
                     var_name = token[1]
@@ -159,7 +171,7 @@ class Interpreter:
                             # Default to 0 if the variable is not defined
                             if var_name not in self.variables:
                                 self.variables[var_name] = 0
-                                
+
                             # checks if the division is with integers or floats only
                             if isinstance(self.variables[var_name], (int, float)) and isinstance(value, (int, float)):
                                 if value != 0:
@@ -173,18 +185,6 @@ class Interpreter:
                     except Exception as e:
                         print(f"RUNTIME ERROR: {self.line_number}")
                         sys.exit()
-
-                # Error if FOR loop not closed
-                if in_for_loop and token[0] != 'FOR_LOOP':
-                    print(f"ERROR: Missing ENDFOR for FOR loop on line {self.line_number}")
-                    sys.exit()
-
-            # Final check for unclosed FOR loops
-            if in_for_loop:
-                print(f"ERROR: Missing ENDFOR at end of file for FOR loop on line {self.line_number}")
-                sys.exit()
-
-
         except Exception as e:
             print(f"RUNTIME ERROR: {self.line_number}")  # catches errors when parsing tokens
             sys.exit()
@@ -198,11 +198,15 @@ class Interpreter:
 
         self.line_number = 0
 
+        with open(file_name, 'r') as file:
+            for line in file:
+                self.line_number += 1
+                tokens = self.lexical_analysis(line)
+                self.parse(tokens)
         try:
             with open(file_name, 'r') as file:
                 for line in file:
                     self.line_number += 1
-
                     tokens = self.lexical_analysis(line)
                     self.parse(tokens)
         except FileNotFoundError:
@@ -213,6 +217,11 @@ class Interpreter:
             sys.exit(1)  # Exit with an error code
 
 if __name__ == "__main__":
+     # The second argument in sys.argv is expected to be the filename
+    
+    #filename = sys.argv[1]  # for getting the filename from command line
+    #OR
+    filename = "test.zpm"
     # Check if the filename is provided as a second argument
     if len(sys.argv) > 1:
         filename = sys.argv[1]  # Get the filename from the command line
@@ -222,4 +231,3 @@ if __name__ == "__main__":
 
     interpreter = Interpreter(filename);
     interpreter.run()
-
